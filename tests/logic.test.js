@@ -1,11 +1,12 @@
 const test=require('node:test'),assert=require('node:assert'),fs=require('fs'),path=require('path'),vm=require('vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
-const {randomSplit,questionsIn,categoriesOf,OFF_BY_DEFAULT}=vm.runInNewContext(read('logic.js')+';({randomSplit,questionsIn,categoriesOf,OFF_BY_DEFAULT})');
+const {splitFor,questionsIn,categoriesOf,OFF_BY_DEFAULT}=vm.runInNewContext(read('logic.js')+';({splitFor,questionsIn,categoriesOf,OFF_BY_DEFAULT})');
 
-test('random split stays within 1-99 and totals 100',()=>{
-  for(const r of [0,.5,.999999]){const s=randomSplit(()=>r);assert.ok(s.a>=1&&s.a<=99&&s.b>=1&&s.b<=99,JSON.stringify(s));assert.strictEqual(s.a+s.b,100)}
-  assert.strictEqual(randomSplit(()=>0).a,1);
-  assert.strictEqual(randomSplit(()=>.999999).a,99);
+test('a question always gets the same believable split',()=>{
+  const seen=new Set();
+  for(let i=0;i<500;i++){const id='q'+i.toString(36),s=splitFor(id);assert.deepStrictEqual({...splitFor(id)},{...s});assert.ok(s.a>=18&&s.a<=82,JSON.stringify(s));assert.strictEqual(s.a+s.b,100);seen.add(s.a)}
+  assert.ok(seen.size>=40,'splits should vary between questions: '+seen.size);
+  assert.ok(new Set(Array.from({length:50},(_,i)=>splitFor('c17930000000'+i).a)).size>=20,'near-identical custom ids should still vary');
 });
 test('several categories can be selected at once',()=>{
   const q=[{cat:'Funny'},{cat:'Food'},{cat:'Deep'}];

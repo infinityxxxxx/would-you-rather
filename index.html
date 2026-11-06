@@ -230,7 +230,7 @@ function showQuestion() {
 }
 
 function vote(side) {
-  const split = randomSplit();
+  const split = splitFor(current.id);
   if (!seen.includes(current.id)) { seen.push(current.id); save('wyrSeen', seen); }
   votedAt = performance.now();
   click();

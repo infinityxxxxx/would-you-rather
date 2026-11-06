@@ -5,7 +5,7 @@ A free party game for one shared phone. Tap one of two options, see a percentage
 ## Features
 
 - 184 built-in questions in 13 categories. Pick as many as you like; Spicy and Adult are off by default.
-- A random split on every vote (1-99%, always totalling 100). No votes are counted, so the numbers are just for fun.
+- A made-up split for each question (18-82%, always totalling 100), the same every time that question comes up. No votes are counted, so the numbers are just for fun.
 - Your own questions, saved on this phone and mixed in
 - Unseen questions come up first
 - Optional click sound
@@ -21,7 +21,7 @@ Then open `http://localhost:8000`. Offline mode needs localhost or HTTPS.
 ## Files
 
 - `index.html`: game and styles
-- `logic.js`: category filtering and the random split
+- `logic.js`: category filtering and the made-up split
 - `questions.js`: question list, written for this project
 - `QUESTIONS.md`: readable copy of the list, for review
 - `sw.js`, `manifest.json`, `icon-*.png`: offline support and install

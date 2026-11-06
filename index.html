@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#17132a">
+  <meta name="description" content="A quick Would You Rather party game for one shared phone. Works offline. No accounts, no ads.">
+  <title>Would You Rather?</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root{color-scheme:dark;--bg:#17132a;--panel:#241f3d;--panel2:#2f2950;--ink:#fbf8ff;--muted:#b4adcf;--a:#ff8a3d;--a-deep:#6e3413;--b:#19c3a6;--b-deep:#0d5449;--accent:#ffd166;--line:#ffffff1c;--dark:#17132a}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 ui-rounded,"SF Pro Rounded","Google Sans",Roboto,system-ui,sans-serif;overscroll-behavior:none}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer}
+    [hidden]{display:none!important}
+    :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+    /* Home */
+    .home{min-height:100svh;max-width:520px;margin:auto;padding:max(28px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+    .logo{margin:10px 0 2px;font-size:clamp(42px,13vw,64px);line-height:.98;letter-spacing:-.045em;font-weight:900}
+    .logo .l1{color:var(--a)}.logo .l2{color:var(--b)}
+    .tag{margin:0;color:var(--muted)}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px}
+    .label{display:block;font-weight:800;font-size:14px;margin-bottom:10px}
+    .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--dark);padding:5px;border-radius:14px}
+    .seg button{border:0;background:none;border-radius:10px;padding:11px 4px;font-weight:800;color:var(--muted);min-height:44px}
+    .seg button[aria-pressed=true]{background:var(--accent);color:#2a2008}
+    .hint{color:var(--muted);font-size:13px;margin:9px 0 0}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px}
+    .row+.row{border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
+    .row small{display:block;color:var(--muted);font-size:12.5px}
+    .row input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none}
+    .play{border:0;border-radius:18px;padding:18px;font-size:20px;font-weight:900;background:var(--accent);color:#2a2008;min-height:60px}
+    .play:active{transform:scale(.98)}
+    details summary{cursor:pointer;font-weight:800;font-size:14px;min-height:28px;display:flex;align-items:center;justify-content:space-between}
+    details summary::-webkit-details-marker{display:none}
+    details summary:after{content:'+';color:var(--accent);font-size:22px;line-height:1}
+    details[open] summary:after{content:'−'}
+    .form{display:grid;gap:8px;margin-top:12px}
+    .form input,.form select{width:100%;background:var(--dark);border:1px solid var(--line);border-radius:11px;padding:12px;min-width:0}
+    .formfoot{display:grid;grid-template-columns:1fr auto;gap:8px}
+    .btn{border:1px solid var(--line);background:var(--panel2);border-radius:11px;padding:11px 15px;font-weight:800;min-height:44px}
+    .note{font-size:13px;color:var(--accent);min-height:18px;margin:2px 0 0}
+    .mine{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+    .mine li{display:flex;align-items:center;gap:10px;background:var(--dark);border-radius:11px;padding:8px 8px 8px 12px;font-size:13.5px}
+    .mine span{flex:1;min-width:0;overflow-wrap:anywhere}
+    .mine button{border:0;background:none;color:var(--muted);min-width:44px;min-height:40px;font-size:13px}
+    .foot{color:var(--muted);font-size:12px;text-align:center;margin-top:auto}
+
+    /* Game */
+    .game{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);height:100dvh}
+    .bar{display:flex;align-items:center;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px 8px}
+    .icon{border:0;background:var(--panel);border-radius:12px;min-width:44px;height:44px;font-size:20px;font-weight:800}
+    .bar .mid{flex:1;text-align:center;min-width:0}
+    .bar h2{margin:0;font-size:17px;font-weight:900;letter-spacing:-.01em}
+    .bar .cat{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .count{font-size:13px;color:var(--muted);min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+    /* Options meet on a slanted seam rather than as separate cards. */
+    .split{flex:1;min-height:0;display:grid;grid-template-rows:1fr 1fr;position:relative;--cut:34px}
+    .opt{position:relative;border:0;padding:26px 26px;overflow:hidden;font-size:clamp(21px,6vw,31px);font-weight:850;line-height:1.2;letter-spacing:-.015em;color:#1a1208;touch-action:manipulation;display:flex;align-items:center;justify-content:center;text-align:center;min-height:0}
+    #optA{background:var(--a);clip-path:polygon(0 0,100% 0,100% calc(100% - var(--cut)),0 100%);margin-bottom:calc(var(--cut) * -.5 + 3px);padding-bottom:calc(var(--cut) + 18px)}
+    #optB{background:var(--b);clip-path:polygon(0 var(--cut),100% 0,100% 100%,0 100%);margin-top:calc(var(--cut) * -.5 + 3px);padding-top:calc(var(--cut) + 18px)}
+    .opt .fill{position:absolute;inset:0;transform-origin:left;transform:scaleX(1)}
+    .voted .fill{transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+    #optA .fill{background:var(--a)}#optB .fill{background:var(--b)}
+    .voted #optA .fill{background:#b5541c}.voted #optB .fill{background:#0f8a76}
+    .voted #optA{background:var(--a-deep)}.voted #optB{background:var(--b-deep)}
+    .voted .opt{color:#fff}
+    .opt .text,.opt .stat{position:relative;z-index:1}
+    .opt .text{max-width:560px;overflow-wrap:anywhere}
+    .opt .stat{display:block;font-size:clamp(38px,12vw,60px);font-weight:950;letter-spacing:-.04em;line-height:1;margin-bottom:8px;font-variant-numeric:tabular-nums}
+    .opt .stack{position:relative;z-index:1}
+    .pick{position:absolute;z-index:2;left:18px;background:#fff;color:#17132a;border-radius:99px;padding:5px 11px;font-size:12.5px;font-weight:900;letter-spacing:0;line-height:1.2}
+    #optA .pick{top:14px}#optB .pick{bottom:14px}
+    .or{position:absolute;z-index:3;right:16px;top:calc(50% - 12px);transform:translateY(-50%) rotate(-3deg);background:var(--bg);color:var(--ink);font-size:13px;font-weight:900;padding:5px 12px;border-radius:9px;pointer-events:none;letter-spacing:.06em}
+    .foot2{padding:9px 16px max(11px,env(safe-area-inset-bottom));text-align:center;color:var(--muted);font-size:13px;min-height:40px}
+    .foot2 b{color:var(--ink)}
+
+    /* End of deck */
+    .done{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;text-align:center;z-index:5}
+    .done h2{font-size:34px;margin:0;letter-spacing:-.03em}.done p{color:var(--muted);margin:0 0 8px;max-width:340px}
+    .done .play{width:min(100%,320px)}
+
+    @media(min-aspect-ratio:1/1){
+      .split{grid-template-rows:none;grid-template-columns:1fr 1fr}
+      #optA{clip-path:polygon(0 0,100% 0,calc(100% - var(--cut)) 100%,0 100%);margin:0 calc(var(--cut) * -.5 + 3px) 0 0;padding:26px calc(var(--cut) + 18px) 26px 26px}
+      #optB{clip-path:polygon(var(--cut) 0,100% 0,100% 100%,0 100%);margin:0 0 0 calc(var(--cut) * -.5 + 3px);padding:26px 26px 26px calc(var(--cut) + 18px)}
+      .or{right:auto;left:50%;top:14px;transform:translateX(-50%) rotate(-3deg)}
+      #optB .pick{bottom:auto;top:14px;left:auto;right:18px}
+    }
+    @media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+<main class="home" id="home">
+  <h1 class="logo"><span class="l1">Would you</span><br><span class="l2">rather?</span></h1>
+  <p class="tag">Tap one. See how this phone votes. Argue about it.</p>
+  <section class="card">
+    <span class="label" id="spiceLabel">How spicy?</span>
+    <div class="seg" role="group" aria-labelledby="spiceLabel" id="spice">
+      <button data-v="mild">Mild</button><button data-v="medium">Medium</button><button data-v="spicy">Spicy</button>
+    </div>
+    <p class="hint" id="spiceHint"></p>
+  </section>
+  <section class="card">
+    <label class="row"><span>Adult mode<small>Adds flirty, grown-up questions. Off by default.</small></span><input type="checkbox" id="adult"></label>
+    <label class="row"><span>Click sound</span><input type="checkbox" id="sound"></label>
+  </section>
+  <button class="play" id="play">Play</button>
+  <details class="card" id="customBox">
+    <summary>Add your own questions</summary>
+    <div class="form">
+      <input id="customA" maxlength="90" placeholder="Option 1" aria-label="Option 1">
+      <input id="customB" maxlength="90" placeholder="Option 2" aria-label="Option 2">
+      <div class="formfoot">
+        <select id="customHeat" aria-label="Spice level"><option value="mild">Mild</option><option value="medium">Medium</option><option value="spicy">Spicy</option><option value="adult">Adult</option></select>
+        <button class="btn" id="saveCustom">Save</button>
+      </div>
+      <p class="note" id="note" role="status"></p>
+    </div>
+    <ul class="mine" id="mine"></ul>
+  </details>
+  <div class="foot"><button class="btn" id="resetVotes">Reset vote counts</button><p id="stats"></p></div>
+</main>
+
+<section class="game" id="game" hidden>
+  <header class="bar">
+    <button class="icon" id="back" aria-label="Back to menu">←</button>
+    <div class="mid"><h2>Would you rather?</h2><div class="cat" id="cat"></div></div>
+    <div class="count" id="count"></div>
+  </header>
+  <div class="split" id="split" aria-live="polite">
+    <button class="opt" id="optA"><span class="fill"></span><span class="stack"><span class="stat" hidden></span><span class="text"></span></span></button>
+    <button class="opt" id="optB"><span class="fill"></span><span class="stack"><span class="stat" hidden></span><span class="text"></span></span></button>
+    <div class="or" aria-hidden="true">OR</div>
+  </div>
+  <div class="foot2" id="info" role="status"></div>
+</section>
+
+<section class="done" id="done" hidden>
+  <h2>That's all of them!</h2>
+  <p id="doneText"></p>
+  <button class="play" id="again">Shuffle and play again</button>
+  <button class="btn" id="toMenu">Back to menu</button>
+</section>
+
+<script src="questions.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const LEVELS = {mild: 0, medium: 1, spicy: 2};
+const HINTS = {mild: 'Silly, easy questions only.', medium: 'Mild plus tougher choices.', spicy: 'Everything, including awkward, brutal choices.'};
+// A vote can't advance the game until this has passed, so a double tap isn't read as "next".
+const TAP_GUARD_MS = 400;
+
+const load = (key, fallback) => { try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; } catch { return fallback; } };
+const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+
+// Text-based ids keep vote counts attached to a question if the list is reordered.
+function hash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
+const builtIn = BUILT_IN_QUESTIONS.map(([cat, heat, a, b]) => ({id: 'q' + hash(a + '|' + b), cat, heat, a, b}));
+
+const settings = Object.assign({spice: 'medium', adult: false, sound: true}, load('wyrSettings', {}));
+let votes = load('wyrVotes', {}), seen = load('wyrSeen', []), custom = load('wyrCustom', []);
+let deck = [], pos = 0, current = null, votedAt = 0;
+
+function pool() {
+  const max = LEVELS[settings.spice];
+  return [...builtIn, ...custom.map(q => ({...q, cat: q.cat || 'Your question'}))]
+    .filter(q => q.heat === 'adult' ? settings.adult : (LEVELS[q.heat] ?? 0) <= max);
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* Unseen questions come first, so reopening the game doesn't repeat the same ones. */
+function buildDeck() {
+  const all = pool(), seenSet = new Set(seen);
+  deck = [...shuffle(all.filter(q => !seenSet.has(q.id))), ...shuffle(all.filter(q => seenSet.has(q.id)))];
+  pos = 0;
+}
+
+function renderHome() {
+  document.querySelectorAll('#spice button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === settings.spice));
+  $('spiceHint').textContent = HINTS[settings.spice];
+  $('adult').checked = settings.adult;
+  $('sound').checked = settings.sound;
+  const n = Object.values(votes).reduce((t, v) => t + v.a + v.b, 0);
+  $('stats').textContent = `${pool().length} questions ready · ${n} ${n === 1 ? 'vote' : 'votes'} on this phone`;
+  $('resetVotes').hidden = n === 0;
+  const list = $('mine'); list.replaceChildren();
+  custom.forEach(q => {
+    const li = document.createElement('li'), s = document.createElement('span'), del = document.createElement('button');
+    s.textContent = `${q.a} or ${q.b}`;
+    del.textContent = 'Delete';
+    del.setAttribute('aria-label', `Delete ${q.a} or ${q.b}`);
+    del.onclick = () => { custom = custom.filter(x => x.id !== q.id); save('wyrCustom', custom); renderHome(); };
+    li.append(s, del); list.append(li);
+  });
+}
+
+function setStat(btn, pct) {
+  const el = btn.querySelector('.stat');
+  el.hidden = pct === null; el.textContent = pct === null ? '' : pct + '%';
+  btn.querySelector('.fill').style.transform = `scaleX(${pct === null ? 1 : pct / 100})`;
+}
+function clearPick(btn) { btn.querySelector('.pick')?.remove(); }
+
+function showQuestion() {
+  current = deck[pos]; votedAt = 0;
+  $('split').classList.remove('voted');
+  for (const [btn, text] of [[$('optA'), current.a], [$('optB'), current.b]]) {
+    btn.querySelector('.text').textContent = text;
+    setStat(btn, null); clearPick(btn);
+  }
+  $('cat').textContent = current.cat;
+  $('count').textContent = `${pos + 1}/${deck.length}`;
+  $('info').textContent = 'Tap the one you\'d pick';
+}
+
+function vote(side) {
+  // The split shows votes from before this one, so the first vote on a question reads 0% / 0%.
+  const v = votes[current.id] || {a: 0, b: 0}, total = v.a + v.b;
+  const pa = total ? Math.round(v.a / total * 100) : 0, pb = total ? 100 - pa : 0;
+  votes[current.id] = {a: v.a + (side === 'a'), b: v.b + (side === 'b')};
+  save('wyrVotes', votes);
+  if (!seen.includes(current.id)) { seen.push(current.id); save('wyrSeen', seen); }
+  votedAt = performance.now();
+  click();
+  $('split').classList.add('voted');
+  setStat($('optA'), pa); setStat($('optB'), pb);
+  const mine = side === 'a' ? $('optA') : $('optB'), tag = document.createElement('span');
+  tag.className = 'pick'; tag.textContent = '✓ Your pick'; mine.append(tag);
+  $('info').textContent = (total === 0 ? 'First vote here, counted from next time' : `${total} earlier ${total === 1 ? 'vote' : 'votes'} on this phone`) + ' · tap to continue';
+}
+
+function tap(side) {
+  if (!votedAt) return vote(side);
+  if (performance.now() - votedAt < TAP_GUARD_MS) return;
+  next();
+}
+function next() {
+  pos++;
+  if (pos >= deck.length) return finish();
+  showQuestion();
+}
+function finish() {
+  seen = []; save('wyrSeen', seen);
+  $('doneText').textContent = `You went through all ${deck.length} questions at this spice level.`;
+  $('done').hidden = false;
+}
+
+function startGame(push = true) {
+  buildDeck();
+  if (!deck.length) { $('stats').textContent = 'No questions match those settings.'; return; }
+  $('done').hidden = true; $('home').hidden = true; $('game').hidden = false;
+  if (push) history.pushState({game: true}, '');
+  showQuestion();
+}
+function showHome() { $('game').hidden = true; $('done').hidden = true; $('home').hidden = false; renderHome(); }
+
+let audio;
+function click() {
+  if (!settings.sound) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+    o.frequency.setValueAtTime(720, t); o.frequency.exponentialRampToValueAtTime(320, t + .05);
+    g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + .07);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + .08);
+  } catch {}
+}
+
+document.querySelectorAll('#spice button').forEach(b => b.onclick = () => { settings.spice = b.dataset.v; save('wyrSettings', settings); renderHome(); });
+$('adult').onchange = e => { settings.adult = e.target.checked; save('wyrSettings', settings); renderHome(); };
+$('sound').onchange = e => { settings.sound = e.target.checked; save('wyrSettings', settings); };
+$('play').onclick = () => startGame();
+$('again').onclick = () => startGame(false);
+$('toMenu').onclick = () => history.back();
+$('back').onclick = () => history.back();
+window.addEventListener('popstate', showHome);
+$('optA').onclick = () => tap('a');
+$('optB').onclick = () => tap('b');
+$('resetVotes').onclick = () => { if (confirm('Reset all vote counts on this phone?')) { votes = {}; save('wyrVotes', votes); renderHome(); } };
+$('saveCustom').onclick = () => {
+  const a = $('customA').value.trim(), b = $('customB').value.trim();
+  if (!a || !b) { $('note').textContent = 'Fill in both options first.'; return; }
+  custom.push({id: 'c' + Date.now(), heat: $('customHeat').value, a, b});
+  save('wyrCustom', custom);
+  $('customA').value = $('customB').value = '';
+  $('note').textContent = 'Saved on this phone.';
+  renderHome();
+};
+renderHome();
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+</script>
+</body>
+</html>

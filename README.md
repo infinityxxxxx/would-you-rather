@@ -25,4 +25,13 @@ Then open `http://localhost:8000`. Offline mode needs localhost or HTTPS.
 - `questions.js`: question list, written for this project
 - `QUESTIONS.md`: readable copy of the list, for review
 - `sw.js`, `manifest.json`, `icon-*.png`: offline support and install
-- `tests/`: question list and game rule checks (`node --test tests/*.test.js`)
+- `scripts/stamp.js`: versions the script links so a deploy can't pair new `index.html` with an old cached script
+- `tests/`: question list, game rule and script version checks (`node --test tests/*.test.js`)
+
+## Before committing
+
+Run this once per clone. It stamps script versions and runs the tests on every commit:
+
+```sh
+git config core.hooksPath .githooks
+```

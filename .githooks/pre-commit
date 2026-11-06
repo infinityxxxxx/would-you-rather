@@ -1,0 +1,6 @@
+#!/bin/sh
+# Stamps script versions and blocks the commit if the tests fail.
+set -e
+node scripts/stamp.js
+git add index.html sw.js
+node --test tests/*.test.js

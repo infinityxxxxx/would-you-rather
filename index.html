@@ -150,15 +150,16 @@ const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(va
 function hash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
 const builtIn = BUILT_IN_QUESTIONS.map(([cat, heat, a, b]) => ({id: 'q' + hash(a + '|' + b), cat, heat, a, b}));
 
-const settings = Object.assign({sound: true}, load('wyrSettings', {}));
-// Remembering what's unticked means categories added later start ticked. Older saves carry the spice picker's choices.
-if (!settings.offCats) settings.offCats = OFF_BY_DEFAULT.filter(c => !(c === 'Spicy' && settings.spice === 'spicy') && !(c === 'Adult' && settings.adult));
-delete settings.spice; delete settings.adult;
-try { localStorage.removeItem('wyrVotes'); } catch {}
 let seen = load('wyrSeen', []), custom = load('wyrCustom', []);
 let deck = [], pos = 0, current = null, votedAt = 0, leaving = false;
-
 const allQuestions = () => [...builtIn, ...custom.map(q => ({...q, cat: CUSTOM_CATEGORY}))];
+
+const savedSettings = load('wyrSettings', null);
+const settings = Object.assign({sound: true}, savedSettings);
+// Remembering what's unticked means categories added later start ticked.
+settings.offCats = initialOffCats(savedSettings, categoriesOf(allQuestions()));
+delete settings.spice; delete settings.adult;
+try { localStorage.removeItem('wyrVotes'); } catch {}
 const pool = () => questionsIn(allQuestions(), settings.offCats);
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
@@ -189,7 +190,7 @@ function renderSelection() {
   $('play').disabled = empty;
   $('clearCats').disabled = empty;
   $('catHint').className = 'hint ' + (empty ? 'warn' : 'dim');
-  $('catHint').textContent = empty ? 'Pick at least one category.' : 'Pick as many as you like. Spicy and Adult stay off until you tick them.';
+  $('catHint').textContent = empty ? 'Pick at least one category.' : 'Pick as many as you like.';
 }
 function renderHome() {
   renderCats(); renderSelection();

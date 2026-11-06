@@ -1,10 +1,17 @@
 // Pure game rules, kept apart from the page so tests can run them without a browser.
 const CUSTOM_CATEGORY = 'Your questions';
-// Off until ticked, so a fresh install never opens with adult or awkward questions.
+// What saves from before the category picker keep switched off, unless they had opted in through the old spice picker.
 const OFF_BY_DEFAULT = ['Spicy', 'Adult'];
 
 const categoriesOf = questions => [...new Set(questions.map(q => q.cat))];
 const questionsIn = (questions, off) => questions.filter(q => !off.includes(q.cat));
+
+// `saved` is the stored settings, or null on a first visit, which starts with nothing ticked.
+function initialOffCats(saved, categories) {
+  if (!saved) return categories;
+  if (saved.offCats) return saved.offCats;
+  return OFF_BY_DEFAULT.filter(c => !(c === 'Spicy' && saved.spice === 'spicy') && !(c === 'Adult' && saved.adult));
+}
 
 // Made-up but believable: tied to the question id, so a question shows the same split every time it comes up.
 const SPLIT_MIN = 18;

@@ -4,7 +4,7 @@ A free party game for one shared phone. Tap one of two options, see a percentage
 
 ## Features
 
-- 184 built-in questions in 13 categories. Pick as many as you like; Spicy and Adult are off by default.
+- 184 built-in questions in 13 categories. Pick as many as you like; none are ticked on a first visit, and your picks are remembered on this phone.
 - A made-up split for each question (18-82%, always totalling 100), the same every time that question comes up. No votes are counted, so the numbers are just for fun.
 - Your own questions, saved on this phone and mixed in
 - Unseen questions come up first

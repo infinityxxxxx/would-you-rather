@@ -1,6 +1,6 @@
 // Built-in questions: [category, spice, option A, option B]
-// Spice is mild, medium, spicy or adult. Adult stays opt-in and non-graphic.
-// A question's vote count is tied to its exact wording, so rewording one restarts its count.
+// Spice is mild, medium, spicy or adult. The Adult category stays opt-in and non-graphic.
+// A question's "already seen" mark is tied to its exact wording, so rewording one makes it unseen.
 const BUILT_IN_QUESTIONS = [
 // Funny
 ['Funny','mild','Have a tiny marching band follow you everywhere','Have a dramatic narrator announce everything you do'],

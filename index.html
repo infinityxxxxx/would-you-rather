@@ -173,6 +173,8 @@ function applyTheme(t) {
 // Remembering what's unticked means categories added later start ticked.
 settings.offCats = initialOffCats(savedSettings, categoriesOf(allQuestions()));
 delete settings.spice; delete settings.adult;
+// Earlier versions saved "nothing ticked" on a first visit. Start those phones over with every category on, once.
+if (settings.catsV !== 2) { settings.catsV = 2; settings.offCats = []; }
 try { localStorage.removeItem('wyrVotes'); } catch {}
 const pool = () => questionsIn(allQuestions(), settings.offCats);
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }

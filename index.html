@@ -39,6 +39,7 @@
     .home{max-width:480px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));min-height:100svh;display:flex;flex-direction:column;gap:12px}
     .home>*{animation:up var(--enter) var(--out) backwards;animation-delay:calc(var(--i,0)*30ms)}
     .tag{margin:0 0 8px}
+    .gear{padding:0;width:44px;height:44px;font-size:1.3rem;flex:none}
     .head{display:flex;align-items:center;justify-content:space-between;min-height:36px}
     .cats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .cats label{background:var(--panel);padding:10px;border-radius:10px;font-size:.9rem;display:flex;gap:8px;align-items:center;min-height:44px;cursor:pointer;transition:transform 150ms var(--out)}
@@ -102,14 +103,12 @@
 </head>
 <body>
 <main class="home" id="home">
-  <h1>Would you rather?</h1>
+  <div class="head"><h1>Would you rather?</h1><button class="ghost gear" id="openSettings" aria-label="Settings">⚙</button></div>
   <p class="tag dim">Two options. One choice.</p>
   <div class="head"><h2 id="catsLabel">Categories</h2><button class="link" id="clearCats">Clear all</button></div>
   <div class="cats" id="cats" role="group" aria-labelledby="catsLabel"></div>
   <p class="hint dim" id="catHint" role="status"></p>
   <button class="big" id="play">Play</button>
-  <label class="tog"><span>Theme</span><select id="theme" aria-label="Color theme"></select></label>
-  <label class="tog"><span>Click sound</span><input type="checkbox" id="sound"></label>
   <details id="customBox">
     <summary>Add your own questions</summary>
     <div class="form">
@@ -120,6 +119,15 @@
     </div>
     <ul class="mine" id="mine"></ul>
   </details>
+</main>
+
+<main class="home" id="settingsPage" hidden>
+  <h1>Settings</h1>
+  <h2>Theme</h2>
+  <label class="tog"><span>Color theme</span><select id="theme" aria-label="Color theme"></select></label>
+  <h2>Feedback</h2>
+  <label class="tog"><span>Click sound</span><input type="checkbox" id="sound"></label>
+  <button class="big" id="closeSettings">Back</button>
 </main>
 
 <section class="game" id="game" hidden>
@@ -285,7 +293,9 @@ function startGame(push = true) {
   if (push) history.pushState({game: true}, '');
   showQuestion();
 }
-function showHome() { $('game').hidden = true; $('done').hidden = true; $('home').hidden = false; renderHome(); }
+function openSettings() { $('home').hidden = true; $('settingsPage').hidden = false; scrollTo(0, 0); }
+function closeSettings() { $('settingsPage').hidden = true; $('home').hidden = false; }
+function showHome() { $('settingsPage').hidden = true; $('game').hidden = true; $('done').hidden = true; $('home').hidden = false; renderHome(); }
 
 let audio;
 function click() {
@@ -305,6 +315,8 @@ $('theme').replaceChildren(...Object.entries(THEMES).map(([k, l]) => Object.assi
 $('theme').onchange = e => { settings.theme = e.target.value; applyTheme(settings.theme); save('wyrSettings', settings); };
 applyTheme(settings.theme);
 $('sound').onchange = e => { settings.sound = e.target.checked; save('wyrSettings', settings); };
+$('openSettings').onclick = openSettings;
+$('closeSettings').onclick = closeSettings;
 $('play').onclick = () => startGame();
 $('again').onclick = () => startGame(false);
 $('toMenu').onclick = () => history.back();

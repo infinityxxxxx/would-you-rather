@@ -1,4 +1,4 @@
-const CACHE='wyr-0b1f20b967';
+const CACHE='wyr-3234298f87';
 const ASSETS=['./','./index.html','./questions.js?v=8b2ff27693','./logic.js?v=5d501bb879','./manifest.json','./icon-192.png','./icon-512.png'];
 // cache:'reload' skips the browser's HTTP cache, so the offline copy is never a mix of two deploys.
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting())));

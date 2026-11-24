@@ -13,11 +13,11 @@ test('several categories can be selected at once',()=>{
   assert.deepStrictEqual(Array.from(questionsIn(q,['Deep'])).map(x=>x.cat),['Funny','Food']);
   assert.strictEqual(questionsIn(q,['Funny','Food','Deep']).length,0);
 });
-test('a first visit starts with every category unticked',()=>{
+test('a first visit starts with every category on',()=>{
   const qs=vm.runInNewContext(read('questions.js')+';BUILT_IN_QUESTIONS').map(([cat])=>({cat}));
   const cats=categoriesOf(qs);
   for(const c of OFF_BY_DEFAULT)assert.ok(cats.includes(c),c);
-  assert.strictEqual(questionsIn(qs,initialOffCats(null,cats)).length,0);
+  assert.strictEqual(questionsIn(qs,initialOffCats(null,cats)).length,qs.length);
 });
 test('saved category picks are kept on later visits',()=>{
   const cats=['Funny','Food','Spicy','Adult'];

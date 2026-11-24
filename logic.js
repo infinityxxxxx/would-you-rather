@@ -6,9 +6,9 @@ const OFF_BY_DEFAULT = ['Spicy', 'Adult'];
 const categoriesOf = questions => [...new Set(questions.map(q => q.cat))];
 const questionsIn = (questions, off) => questions.filter(q => !off.includes(q.cat));
 
-// `saved` is the stored settings, or null on a first visit, which starts with nothing ticked.
+// `saved` is the stored settings, or null on a first visit, which starts with every category on.
 function initialOffCats(saved, categories) {
-  if (!saved) return categories;
+  if (!saved) return [];
   if (saved.offCats) return saved.offCats;
   return OFF_BY_DEFAULT.filter(c => !(c === 'Spicy' && saved.spice === 'spicy') && !(c === 'Adult' && saved.adult));
 }

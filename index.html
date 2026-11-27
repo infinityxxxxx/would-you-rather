@@ -139,6 +139,7 @@
   <label class="tog"><span>Color theme</span><select id="theme" aria-label="Color theme"></select></label>
   <h2>Feedback</h2>
   <label class="tog"><span>Click sound</span><input type="checkbox" id="sound"></label>
+  <label class="tog"><span>Vibration</span><input type="checkbox" id="vibrate"></label>
   <button class="big" id="closeSettings">Back</button>
 </main>
 
@@ -183,7 +184,7 @@ let deck = [], pos = 0, current = null, votedAt = 0, leaving = false;
 const allQuestions = () => [...builtIn, ...custom.map(q => ({...q, cat: CUSTOM_CATEGORY}))];
 
 const savedSettings = load('wyrSettings', null);
-const settings = Object.assign({sound: true, theme: 'midnight'}, savedSettings);
+const settings = Object.assign({sound: true, vibrate: true, theme: 'midnight'}, savedSettings);
 const THEMES = { midnight: 'Midnight', ocean: 'Ocean', forest: 'Forest', sunset: 'Sunset', grape: 'Grape', mono: 'Black & White', light: 'Light' };
 function applyTheme(t) {
   if (!THEMES[t]) t = 'midnight';
@@ -231,6 +232,7 @@ function renderSelection() {
 function renderHome() {
   renderCats(); renderSelection();
   $('sound').checked = settings.sound;
+  $('vibrate').checked = settings.vibrate;
   const list = $('mine'); list.replaceChildren();
   custom.forEach(q => {
     const li = document.createElement('li'), s = document.createElement('span'), del = document.createElement('button');
@@ -268,7 +270,6 @@ function vote(side) {
   const split = splitFor(current.id);
   if (!seen.includes(current.id)) { seen.push(current.id); save('wyrSeen', seen); }
   votedAt = performance.now();
-  click();
   $('split').classList.remove('enter');
   $('split').classList.add('voted');
   setStat($('optA'), split.a); setStat($('optB'), split.b);
@@ -321,12 +322,24 @@ function click() {
     o.connect(g).connect(audio.destination); o.start(t); o.stop(t + .08);
   } catch {}
 }
+// Haptic tick: Android and most desktop browsers. iOS Safari ignores navigator.vibrate.
+function buzz(ms = 12) {
+  if (!settings.vibrate || !navigator.vibrate) return;
+  try { navigator.vibrate(ms); } catch {}
+}
+// One place for all taps: every button, option, toggle, dropdown and checkbox gives sound + vibration.
+addEventListener('pointerdown', e => {
+  if (e.button > 0 || !e.target.closest) return;
+  if (!e.target.closest('button, select, label.tog, input[type=checkbox]')) return;
+  click(); buzz();
+}, {passive: true});
 
 $('clearCats').onclick = () => { settings.offCats = categoriesOf(allQuestions()); save('wyrSettings', settings); renderHome(); };
 $('theme').replaceChildren(...Object.entries(THEMES).map(([k, l]) => Object.assign(document.createElement('option'), {value: k, textContent: l, selected: k === settings.theme})));
 $('theme').onchange = e => { settings.theme = e.target.value; applyTheme(settings.theme); save('wyrSettings', settings); };
 applyTheme(settings.theme);
 $('sound').onchange = e => { settings.sound = e.target.checked; save('wyrSettings', settings); };
+$('vibrate').onchange = e => { settings.vibrate = e.target.checked; save('wyrSettings', settings); buzz(); };
 $('openSettings').onclick = openSettings;
 $('closeSettings').onclick = closeSettings;
 $('play').onclick = () => startGame();

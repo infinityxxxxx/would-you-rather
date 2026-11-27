@@ -4,7 +4,7 @@
 const crypto = require('crypto'), fs = require('fs'), path = require('path');
 
 const SCRIPTS = ['questions.js', 'logic.js'];
-const OTHER_ASSETS = ['manifest.json', 'icon-192.png', 'icon-512.png'];
+const OTHER_ASSETS = ['manifest.json', 'icon-192.png', 'icon-512.png', 'fonts/bricolage-grotesque-latin.woff2', 'fonts/bricolage-grotesque-latin-ext.woff2'];
 const ROOT = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(ROOT, file));
 const hash = (...parts) => {

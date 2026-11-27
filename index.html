@@ -111,7 +111,16 @@
     :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     html{scrollbar-color:var(--line) transparent}
     .svgi{width:1.15em;height:1.15em;vertical-align:-.2em;flex:none}
-  </style>
+  /* more games drop-down (same in all five games) */
+.more-games{width:min(100%,420px);margin:16px auto;text-align:center;flex:none}
+.more-games summary{list-style:none;cursor:pointer;padding:14px;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);font-weight:700}
+.more-games summary::-webkit-details-marker{display:none}
+.more-games summary::after{content:" \25BE"}
+.more-games[open] summary::after{content:" \25B4"}
+.more-games a{display:block;margin-top:8px;padding:14px;border-radius:14px;background:color-mix(in srgb,currentColor 10%,transparent);color:inherit;text-decoration:none}
+details.more-games{background:none;border:0;padding:0}
+.more-games summary{display:block}
+</style>
 </head>
 <body>
 <main class="home" id="home">
@@ -131,6 +140,7 @@
     </div>
     <ul class="mine" id="mine"></ul>
   </details>
+  <details class="more-games"><summary>More games</summary><a href="https://infinityxxxxx.github.io/imposter/">Imposter</a><a href="https://infinityxxxxx.github.io/shes-a-10-but/">She's a 10, but...</a><a href="https://infinityxxxxx.github.io/most-likely-to/">Most Likely To...</a><a href="https://infinityxxxxx.github.io/hot-take-spectrum/">Hot Take Spectrum</a></details>
 </main>
 
 <main class="home" id="settingsPage" hidden>
@@ -138,8 +148,9 @@
   <h2>Theme</h2>
   <label class="tog"><span>Color theme</span><select id="theme" aria-label="Color theme"></select></label>
   <h2>Feedback</h2>
-  <label class="tog"><span>Click sound</span><input type="checkbox" id="sound"></label>
-  <label class="tog"><span>Vibration</span><input type="checkbox" id="vibrate"></label>
+  <label class="tog"><span>Sound effects</span><input type="checkbox" id="sound"></label>
+  <label class="tog"><span>Vibration (Android only)</span><input type="checkbox" id="vibe"></label>
+  <h2>Volume</h2><input type="range" id="vol" min="0.1" max="1" step="0.05" aria-label="Volume" style="width:100%;accent-color:var(--accent)">
   <button class="big" id="closeSettings">Back</button>
 </main>
 
@@ -161,6 +172,7 @@
   <p class="dim">You've seen every question in these categories.</p>
   <button class="big" id="again">Shuffle and play again</button>
   <button class="ghost" id="toMenu">Back to menu</button>
+  <details class="more-games"><summary>More games</summary><a href="https://infinityxxxxx.github.io/imposter/">Imposter</a><a href="https://infinityxxxxx.github.io/shes-a-10-but/">She's a 10, but...</a><a href="https://infinityxxxxx.github.io/most-likely-to/">Most Likely To...</a><a href="https://infinityxxxxx.github.io/hot-take-spectrum/">Hot Take Spectrum</a></details>
 </section>
 
 <script src="questions.js?v=8b2ff27693"></script>
@@ -184,7 +196,7 @@ let deck = [], pos = 0, current = null, votedAt = 0, leaving = false;
 const allQuestions = () => [...builtIn, ...custom.map(q => ({...q, cat: CUSTOM_CATEGORY}))];
 
 const savedSettings = load('wyrSettings', null);
-const settings = Object.assign({sound: true, vibrate: true, theme: 'midnight'}, savedSettings);
+const settings = Object.assign({sound: true, vibe: savedSettings?.vibrate !== false, vol: .6, theme: 'midnight'}, savedSettings);
 const THEMES = { midnight: 'Midnight', ocean: 'Ocean', forest: 'Forest', sunset: 'Sunset', grape: 'Grape', mono: 'Black & White', light: 'Light' };
 function applyTheme(t) {
   if (!THEMES[t]) t = 'midnight';
@@ -232,7 +244,7 @@ function renderSelection() {
 function renderHome() {
   renderCats(); renderSelection();
   $('sound').checked = settings.sound;
-  $('vibrate').checked = settings.vibrate;
+  $('vibe').checked = settings.vibe; $('vol').value = settings.vol;
   const list = $('mine'); list.replaceChildren();
   custom.forEach(q => {
     const li = document.createElement('li'), s = document.createElement('span'), del = document.createElement('button');
@@ -270,6 +282,7 @@ function vote(side) {
   const split = splitFor(current.id);
   if (!seen.includes(current.id)) { seen.push(current.id); save('wyrSeen', seen); }
   votedAt = performance.now();
+  sfx.lock(); buzz(BUZZ.lock);
   $('split').classList.remove('enter');
   $('split').classList.add('voted');
   setStat($('optA'), split.a); setStat($('optB'), split.b);
@@ -290,9 +303,11 @@ function tap(side) {
 function next() {
   pos++;
   if (pos >= deck.length) return finish();
+  sfx.card(); buzz(BUZZ.card);
   showQuestion();
 }
 function finish() {
+  sfx.win(); buzz(BUZZ.win);
   // Only this deck starts over, so other categories keep their unseen questions.
   const finished = new Set(deck.map(q => q.id));
   seen = seen.filter(id => !finished.has(id)); save('wyrSeen', seen);
@@ -302,6 +317,7 @@ function finish() {
 function startGame(push = true) {
   buildDeck();
   if (!deck.length) return;
+  ensureAudio(); sfx.start(); buzz(BUZZ.lock);
   $('done').hidden = true; $('home').hidden = true; $('game').hidden = false;
   if (push) history.pushState({game: true}, '');
   showQuestion();
@@ -310,36 +326,43 @@ function openSettings() { $('home').hidden = true; $('settingsPage').hidden = fa
 function closeSettings() { $('settingsPage').hidden = true; $('home').hidden = false; }
 function showHome() { $('settingsPage').hidden = true; $('game').hidden = true; $('done').hidden = true; $('home').hidden = false; renderHome(); }
 
-let audio;
-function click() {
-  if (!settings.sound) return;
-  try {
-    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-    if (audio.state === 'suspended') audio.resume();
-    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-    o.frequency.setValueAtTime(720, t); o.frequency.exponentialRampToValueAtTime(320, t + .05);
-    g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.001, t + .07);
-    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + .08);
-  } catch {}
-}
-// Haptic tick: Android and most desktop browsers. iOS Safari ignores navigator.vibrate.
-function buzz(ms = 12) {
-  if (!settings.vibrate || !navigator.vibrate) return;
-  try { navigator.vibrate(ms); } catch {}
-}
-// One place for all taps: every button, option, toggle, dropdown and checkbox gives sound + vibration.
-addEventListener('pointerdown', e => {
-  if (e.button > 0 || !e.target.closest) return;
-  if (!e.target.closest('button, select, label.tog, input[type=checkbox]')) return;
-  click(); buzz();
-}, {passive: true});
+const S = settings; // the sound kit reads S.sound, S.vibe, S.vol
+// ---- party sound kit: the SAME block in all five games (Imposter, Would You Rather, She's a 10, Most Likely To, Hot Take). Change one, change all.
+let ac;
+function ensureAudio(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
+function tone(f,d,{type='sine',vol=1,slide=0,delay=0}={}){if(!S.sound||!ac)return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol*S.vol*.35,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.02)}
+function noise(d,f0,f1,vol=1,delay=0){if(!S.sound||!ac)return;const t=ac.currentTime+delay,n=ac.sampleRate*d|0,buf=ac.createBuffer(1,n,ac.sampleRate),x=buf.getChannelData(0);for(let i=0;i<n;i++)x[i]=Math.random()*2-1;const src=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();src.buffer=buf;fl.type='bandpass';fl.Q.value=1.2;fl.frequency.setValueAtTime(f0,t);fl.frequency.exponentialRampToValueAtTime(f1,t+d);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol*S.vol*.35,t+d*.6);g.gain.exponentialRampToValueAtTime(.0001,t+d);src.connect(fl);fl.connect(g);g.connect(ac.destination);src.start(t)}
+const bell=(f,delay=0,len=1)=>{tone(f,.9*len,{vol:.8,delay});tone(f*2.76,.5*len,{vol:.22,delay})};
+let tapT;const named=fn=>(...a)=>{clearTimeout(tapT);fn(...a)}; // a named sound cancels the pending generic tap blip
+const sfx={
+ tap:()=>tone(1200,.04,{vol:.5}), // any button
+ tick:()=>tone(900,.03,{type:'square',vol:.3}), // scroll wheel, slider, countdown
+ start:named(()=>{bell(784,0,.8);bell(988,.12,.8)}), // game begins
+ card:named(()=>{noise(.25,400,2600,1.4);bell(659.25,.16)}), // new card / pass the phone
+ hide:named(()=>{tone(660,.12,{vol:.6});tone(494,.18,{vol:.6,delay:.1})}),
+ lock:named(()=>[523.25,659.25,783.99].forEach((f,i)=>tone(f,.25,{vol:.7,delay:i*.08}))), // vote or answer locked in
+ reveal:named(()=>{noise(.3,300,3000,2.2);bell(880,.22)}),
+ win:named(()=>[523.25,659.25,783.99,1046.5].forEach((f,i)=>bell(f,i*.09,.8))),
+ close:named(()=>{bell(784,0,.8);bell(988,.12,.8)}),
+ miss:named(()=>tone(220,.45,{type:'triangle',vol:1.2,slide:110})),
+ ding:named(()=>bell(1320,0,1.4)), // timer up
+ final:named(()=>{noise(.9,200,2500,2.4);tone(110,.5,{type:'triangle',vol:1.4,slide:55,delay:.9})}), // big drum-roll reveal
+ dot:i=>tone(600+i*90,.12,{vol:.5,delay:.25+i*.11})
+};
+// vibration strengths (ms), used by name everywhere
+const BUZZ={tap:12,tick:8,select:15,card:15,lock:30,reveal:40,close:[50,40,50],win:[60,40,60,40,120],miss:200,alarm:[300,100,300,100,300]};
+function buzz(p){try{if(S.vibe&&navigator.vibrate)navigator.vibrate(p)}catch(e){}} // Android only, iOS ignores it
+document.addEventListener('click',e=>{if(!e.target.closest('button,input[type=checkbox],select,summary,.more-games a'))return;ensureAudio();buzz(BUZZ.tap);tapT=setTimeout(sfx.tap,0)},true); // every tap: blip + light buzz
+// ---- end sound kit
 
 $('clearCats').onclick = () => { settings.offCats = categoriesOf(allQuestions()); save('wyrSettings', settings); renderHome(); };
 $('theme').replaceChildren(...Object.entries(THEMES).map(([k, l]) => Object.assign(document.createElement('option'), {value: k, textContent: l, selected: k === settings.theme})));
 $('theme').onchange = e => { settings.theme = e.target.value; applyTheme(settings.theme); save('wyrSettings', settings); };
 applyTheme(settings.theme);
-$('sound').onchange = e => { settings.sound = e.target.checked; save('wyrSettings', settings); };
-$('vibrate').onchange = e => { settings.vibrate = e.target.checked; save('wyrSettings', settings); buzz(); };
+$('sound').onchange = e => { settings.sound = e.target.checked; save('wyrSettings', settings); ensureAudio(); sfx.tap(); };
+$('vibe').onchange = e => { settings.vibe = e.target.checked; save('wyrSettings', settings); buzz(BUZZ.lock); };
+$('vol').oninput = e => { settings.vol = +e.target.value; };
+$('vol').onchange = () => { save('wyrSettings', settings); ensureAudio(); sfx.tap(); };
 $('openSettings').onclick = openSettings;
 $('closeSettings').onclick = closeSettings;
 $('play').onclick = () => startGame();
